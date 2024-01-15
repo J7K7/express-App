@@ -25,12 +25,12 @@ async function query() {
         query = `
             CREATE TABLE IF NOT EXISTS user (
                 id INT PRIMARY KEY AUTO_INCREMENT,
-                username VARCHAR(255) UNIQUE,
                 name VARCHAR(255),
-                email VARCHAR(255),
-                mobileNo VARCHAR(15),
+                email VARCHAR(255) UNIQUE,
+                mobileNo VARCHAR(15) UNIQUE,
                 password TEXT,
                 image VARCHAR(255),
+                dob DATETIME,
                 userType VARCHAR(30)
             )
             `;
@@ -38,6 +38,16 @@ async function query() {
         await connection.execute(query);
 
         console.log('Tables Created If Not Exists !');
+
+        query = `select count(id) as cnt from user`;
+
+        let cnt = await connection.execute(query);
+
+        if(cnt[0][0].cnt == 0){
+          query = `insert into user(name, email, mobileNo, password, image, dob, userType) values
+          ('abc', 'abc@gmail.com', '9316599621','$2b$10$obHOirF9Gdu4cAV13qxjpOMVCbStpoH68zIfgyfjpYKSDOiiCKuuu', '', '2000-01-07', 'admin');`;
+          await connection.execute(query);
+        }
 
       } catch (error) {
         console.error('Error executing query:', error);

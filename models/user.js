@@ -1,24 +1,40 @@
 const bcrypt = require('bcrypt');
 const executeQuery = require('../db/connection');
+const { getDate } = require('../common/commonFunction');
 
 class User{
 
-    constructor(username, name, email, mobileNo, password, image, userType){
-        this.username = username;
+    constructor(name, email, mobileNo, password, image, dob, userType){
         this.password = password;
         this.email = email;
         this.name = name;
         this.mobileNo = mobileNo;
         this.image = image;
         this.userType = userType;
+        this.dob = dob;
     }
 
     async register(){
         try {
+            let query = 'select count(email) as cnt from user where email = ?;';
+            let queryParams = [this.email];
+
+            let cnt = await executeQuery(query, queryParams);
+            if(cnt[0].cnt != 0){
+                return 'Email Already Exists!';
+            }
+
+            query = 'select count(mobileNo) as cnt from user where mobileNo = ?;';
+            queryParams = [this.mobileNo];
+
+            cnt = await executeQuery(query, queryParams);
+            if(cnt[0].cnt != 0){
+                return 'Mobile Number Already Exists!';
+            }
 
             const hashedPassword = await bcrypt.hash(this.password, 10);
-            const sql = 'Insert into user (username, password, email, name, mobileNo, image, userType) values(?,?,?,?,?,?,?)';
-            const params = [this.username, hashedPassword, this.email, this.name, this.mobileNo, this.image, this.userType];
+            const sql = 'Insert into user (password, email, name, mobileNo, image, dob, userType) values(?,?,?,?,?,?,?)';
+            const params = [hashedPassword, this.email, this.name, this.mobileNo, this.image, this.dob, this.userType];
             const result = await executeQuery(sql, params);
 
             if (result && result.affectedRows > 0) {
@@ -27,7 +43,7 @@ class User{
                 console.log('Query did not insert any rows.');
             }
         
-            return "User Register Successfully !";
+            return "User Register Successfully!";
 
         } catch (error) {
             throw error;
@@ -37,8 +53,8 @@ class User{
     async getAllUsers(){
         try {
             const rows = await executeQuery('SELECT * FROM user');
-            console.log('Rows:', rows); // Add this line for logging
-            return rows.map(row => new User(row.id, row.username, row.email, row.password, row.userType, row.image));
+
+            return rows.map(row => new User(row.name, row.email, row.mobileNo, row.password, row.image, getDate(row.dob), row.userType));
         } catch (error) {
           throw error;
         }

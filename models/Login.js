@@ -3,31 +3,36 @@ const {generateToken} = require('../common/commonFunction');
 const bcrypt = require('bcrypt');
 
 class Login{
-    constructor(username, password){
-        this.username = username;
+    constructor(email, password){
+        this.email = email;
         this.password = password;
     }
 
     async authenticate(){
         try {
-            const rows = await executeQuery('SELECT * FROM user WHERE username = ?',[this.username]);
+            const rows = await executeQuery('SELECT * FROM user WHERE email = ?',[this.email]);
         
             if (rows.length === 0) return null;
-
-            console.log(rows);
         
-            const login = new Login(rows[0].username, rows[0].password);
-
-            console.log(this.password);
-
-            console.log(login.password);
+            const login = new Login(rows[0].email, rows[0].password);
         
               // Compare the hashed password
             const passwordMatch = await bcrypt.compare(this.password, login.password);
         
             if (!passwordMatch) return null;
 
-            return generateToken(login, rows[0].id, rows[0].userType);
+            const token = generateToken(login, rows[0].id, rows[0].userType);
+            if(token == null){
+              return token;
+            }
+            const response = {
+              'token' : token,
+              'userType' : rows[0].userType,
+              'name' : rows[0].name,
+              'image' : rows[0].image
+            };
+
+            return response;
 
         } catch (error) {
           throw error;
